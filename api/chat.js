@@ -103,6 +103,7 @@ module.exports = async (req, res) => {
       const data = await apiRes.json();
 
       if (!apiRes.ok) {
+        console.error('ANTHROPIC API ERROR:', apiRes.status, JSON.stringify(data));
         res.status(apiRes.status).json(data);
         return;
       }
@@ -140,6 +141,7 @@ module.exports = async (req, res) => {
 
     res.status(200).json({ content: [{ type: 'text', text: 'عذراً، صار في تأخير بجلب البيانات. جرب كمان مرة.' }] });
   } catch (err) {
-    res.status(500).json({ error: 'server error' });
+    console.error('CHAT API ERROR:', err && err.stack ? err.stack : err);
+    res.status(500).json({ error: err && err.message ? err.message : 'server error' });
   }
 };

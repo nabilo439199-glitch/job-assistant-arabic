@@ -113,29 +113,29 @@ module.exports = async (req, res) => {
         return;
       }
 
-      const toolUseBlock = data.content.find(c => c.type === 'tool_use');
-      let toolResultContent = '';
+      // مهم: الموديل ممكن يستخدم الأداة أكتر من مرة بنفس الرد (بحث متوازي بكذا كلمة).
+      // لازم نتعامل مع كل استخدام للأداة، مش بس الأول، وإلا Anthropic بترفض الطلب التالي.
+      const toolUseBlocks = data.content.filter(c => c.type === 'tool_use');
 
-      if (toolUseBlock && toolUseBlock.name === 'search_jobs') {
-        const result = await searchJobs(toolUseBlock.input.query, toolUseBlock.input.limit || 5);
-        toolResultContent = JSON.stringify(result);
-      } else {
-        toolResultContent = JSON.stringify({ error: 'أداة غير معروفة' });
-      }
+      const toolResults = await Promise.all(toolUseBlocks.map(async (block) => {
+        let content;
+        if (block.name === 'search_jobs') {
+          const result = await searchJobs(block.input.query, block.input.limit || 5);
+          content = JSON.stringify(result);
+        } else {
+          content = JSON.stringify({ error: 'أداة غير معروفة' });
+        }
+        return {
+          type: 'tool_result',
+          tool_use_id: block.id,
+          content: content
+        };
+      }));
 
       workingMessages = [
         ...workingMessages,
         { role: 'assistant', content: data.content },
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'tool_result',
-              tool_use_id: toolUseBlock.id,
-              content: toolResultContent
-            }
-          ]
-        }
+        { role: 'user', content: toolResults }
       ];
     }
 

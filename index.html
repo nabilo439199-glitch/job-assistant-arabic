@@ -405,7 +405,11 @@ function escapeHtml(text){
 
 function formatMessageText(text){
   let html = escapeHtml(text);
+  // [نص](رابط) -> رابط قابل للضغط يفتح بتاب جديد
   html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener" class="job-link">$1 ↗</a>');
+  // ## عنوان -> خط عريض بدون رموز الهاشتاغ
+  html = html.replace(/^#{1,6}\s*(.+)$/gm, '<strong>$1</strong>');
+  // **نص عريض** -> <strong>
   html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   return html;
 }

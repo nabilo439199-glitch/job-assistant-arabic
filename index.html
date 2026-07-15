@@ -151,6 +151,39 @@
   .typing span:nth-child(3){animation-delay:.3s;}
   @keyframes bounce{0%,60%,100%{transform:translateY(0);opacity:.4;}30%{transform:translateY(-4px);opacity:1;}}
 
+  /* ===== قسم البحث السريع (مدينة + مهنة) ===== */
+  .quick-search{
+    display:flex;flex-wrap:wrap;gap:8px;
+    padding:14px 18px 4px;
+  }
+  .quick-search select{
+    flex:1;
+    min-width:120px;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    color:var(--ink);
+    padding:9px 10px;
+    border-radius:10px;
+    font-family:inherit;
+    font-size:13px;
+    outline:none;
+  }
+  .quick-search select:focus{border-color:var(--teal);}
+  .quick-search select:disabled{opacity:.5;}
+  #quickSearchBtn{
+    background:var(--teal);
+    color:#eafff8;
+    border:none;
+    padding:0 16px;
+    border-radius:10px;
+    font-weight:700;
+    cursor:pointer;
+    font-size:13px;
+    font-family:inherit;
+    white-space:nowrap;
+  }
+  #quickSearchBtn:disabled{opacity:.5;cursor:not-allowed;}
+
   .chips{
     display:flex;flex-wrap:wrap;gap:8px;
     padding:0 18px 14px;
@@ -227,6 +260,58 @@
 
     <div id="chat"></div>
 
+    <div class="quick-search" id="quickSearch">
+      <select id="citySelect">
+        <option value="">كل السويد</option>
+        <option value="ستوكهولم">ستوكهولم</option>
+        <option value="يوتوبوري">يوتوبوري (غوتنبرغ)</option>
+        <option value="مالمو">مالمو</option>
+        <option value="أوبسالا">أوبسالا</option>
+        <option value="بوروس">بوروس</option>
+        <option value="أوريبرو">أوريبرو</option>
+        <option value="لينشوبينغ">لينشوبينغ</option>
+        <option value="هلسينبوري">هلسينبوري</option>
+        <option value="يونشوبينغ">يونشوبينغ</option>
+        <option value="نورشوبينغ">نورشوبينغ</option>
+        <option value="لوند">لوند</option>
+        <option value="أوميو">أوميو</option>
+        <option value="يافله">يافله</option>
+        <option value="سوندسفال">سوندسفال</option>
+        <option value="فيستيروس">فيستيروس</option>
+        <option value="إسكيلستونا">إسكيلستونا</option>
+        <option value="هالمستاد">هالمستاد</option>
+        <option value="كارلستاد">كارلستاد</option>
+        <option value="سكوفده">سكوفده</option>
+        <option value="ترولهيتان">ترولهيتان</option>
+      </select>
+
+      <select id="professionSelect">
+        <option value="">أي مهنة</option>
+        <option value="تنظيف">تنظيف</option>
+        <option value="عامل مستودع">عامل مستودع</option>
+        <option value="سائق">سائق</option>
+        <option value="ميكانيكي سيارات">ميكانيكي سيارات</option>
+        <option value="نجار">نجار</option>
+        <option value="كهربائي">كهربائي</option>
+        <option value="سباك">سباك</option>
+        <option value="لحام">لحام</option>
+        <option value="طباخ">طباخ</option>
+        <option value="عامل مطعم">عامل مطعم</option>
+        <option value="مساعد رعاية/تمريض">مساعد رعاية/تمريض</option>
+        <option value="حارس أمن">حارس أمن</option>
+        <option value="عامل بناء">عامل بناء</option>
+        <option value="دهان">دهان</option>
+        <option value="سائق فورك ليفت">سائق فورك ليفت</option>
+        <option value="بائع">بائع</option>
+        <option value="عامل تعبئة وتغليف">عامل تعبئة وتغليف</option>
+        <option value="تقني كمبيوتر">تقني كمبيوتر</option>
+        <option value="مترجم">مترجم</option>
+        <option value="سائق توصيل">سائق توصيل</option>
+      </select>
+
+      <button id="quickSearchBtn">🔍 ابحث</button>
+    </div>
+
     <div class="chips" id="chips">
       <button class="chip" data-msg="بدي أسوي سيرة ذاتية CV بالسويدي بس ما بحكي سويدي منيح">مساعدة بكتابة CV</button>
       <button class="chip" data-msg="لاقيلي وظائف تنضيف أو مستودعات قريبة من بوروس">إيجاد وظائف مناسبة</button>
@@ -249,6 +334,9 @@ const chat = document.getElementById('chat');
 const inputBox = document.getElementById('inputBox');
 const sendBtn = document.getElementById('sendBtn');
 const chips = document.getElementById('chips');
+const citySelect = document.getElementById('citySelect');
+const professionSelect = document.getElementById('professionSelect');
+const quickSearchBtn = document.getElementById('quickSearchBtn');
 
 let history = [];
 
@@ -290,6 +378,9 @@ function updateQuotaBadge(){
   const atLimit = left === 0;
   inputBox.disabled = atLimit;
   sendBtn.disabled = atLimit;
+  citySelect.disabled = atLimit;
+  professionSelect.disabled = atLimit;
+  quickSearchBtn.disabled = atLimit;
   document.querySelectorAll('.chip').forEach(c => c.disabled = atLimit);
   inputBox.placeholder = atLimit ? 'وصلت للحد اليومي — جرب بكرا' : 'اكتب سؤالك هون...';
 
@@ -314,9 +405,7 @@ function escapeHtml(text){
 
 function formatMessageText(text){
   let html = escapeHtml(text);
-  // [نص](رابط) -> رابط قابل للضغط يفتح بتاب جديد
   html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener" class="job-link">$1 ↗</a>');
-  // **نص عريض** -> <strong>
   html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   return html;
 }
@@ -357,8 +446,6 @@ async function sendMessage(text){
   addTyping();
 
   try{
-    // بدل ما نحكي مباشرة مع Anthropic، منحكي مع دالتنا الخاصة على السيرفر
-    // (/api/chat) يلي بتحمل المفتاح بأمان وما بتكشفه للزوار أبداً.
     const response = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -371,7 +458,6 @@ async function sendMessage(text){
     addMessage('bot', reply);
     history.push({role:'assistant', content: reply});
 
-    // خصم رسالة واحدة من الحصة اليومية بعد نجاح الرد
     const usage = getUsage();
     usage.count += 1;
     saveUsage(usage);
@@ -391,7 +477,23 @@ chips.addEventListener('click', (e) => {
   if(btn) sendMessage(btn.dataset.msg);
 });
 
-// رسالة ترحيب أولى
+quickSearchBtn.addEventListener('click', () => {
+  const city = citySelect.value;
+  const prof = professionSelect.value;
+  let msg = '';
+  if(prof && city){
+    msg = `بدور على وظائف ${prof} بمدينة ${city}`;
+  } else if(prof){
+    msg = `بدور على وظائف ${prof} بأي مكان بالسويد`;
+  } else if(city){
+    msg = `بدور على أي وظيفة متاحة بمدينة ${city}`;
+  } else {
+    citySelect.focus();
+    return;
+  }
+  sendMessage(msg);
+});
+
 addMessage('bot', 'أهلاً فيك! أنا مساعد التوظيف — تقدر تسألني عن CV، شو الوظائف المتاحة إلك، أو كيف تحضّر لمقابلة شغل بالسويد. جرّب واحدة من الأزرار تحت أو اكتب سؤالك مباشرة.');
 updateQuotaBadge();
 </script>
